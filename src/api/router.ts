@@ -6,6 +6,7 @@ import { walletRouter } from './wallets';
 import { tokenRouter } from './tokens';
 import { renderRouter } from './render';
 import { simulateRouter } from './simulate';
+import { dexRouter } from './dex';
 
 export const router = Router();
 
@@ -16,3 +17,4 @@ router.use('/wallets', walletRouter);
 router.use('/tokens', tokenRouter);
 router.use('/render', renderRouter);
 router.use('/simulate', simulateRouter);
+router.use('/dex', dexRouter);
