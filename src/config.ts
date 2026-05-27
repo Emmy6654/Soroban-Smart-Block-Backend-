@@ -14,4 +14,5 @@ export const config = {
   indexerBatchSize: parseInt(process.env.INDEXER_BATCH_SIZE ?? '100'),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '60000'),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX ?? '100'),
+  readReplicaUrl: process.env.READ_REPLICA_URL ?? process.env.DATABASE_URL ?? '',
 };

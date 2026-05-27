@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { prisma } from '../db';
+import { prismaWrite as prisma } from '../db';
 import { config } from '../config';
 import { fetchEvents, getLatestLedger, getRpcWebsocketUrl, getTransaction } from './rpc';
 import { decodeTransaction } from './decoder';

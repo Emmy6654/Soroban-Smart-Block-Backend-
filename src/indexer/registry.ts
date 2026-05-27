@@ -1,5 +1,5 @@
 import { xdr } from '@stellar/stellar-sdk';
-import { prisma } from '../db';
+import { prismaRead as prisma } from '../db';
 import { decodeTypedArgs, formatAmount } from './args-decoder';
 
 export interface ContractAbi {

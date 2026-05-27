@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import { router } from './api/router';
-import { prisma } from './db';
+import { prismaWrite as prisma } from './db';
 import { startIndexerService } from './indexer/indexer';
 
 const app = express();
