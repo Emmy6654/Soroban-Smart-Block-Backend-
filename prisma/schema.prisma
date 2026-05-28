@@ -273,3 +273,78 @@ model SignerSnapshot {
   @@index([ledgerSequence])
   @@index([passed])
 }
+
+// Oracle callback audit: links request tx to fulfillment tx
+model OracleCallback {
+  id                    String   @id @default(cuid())
+  requestTransactionHash String   @unique
+  requestLedgerSequence Int
+  requestTimestamp      DateTime
+  fulfillmentTransactionHash String?
+  fulfillmentLedgerSequence Int?
+  fulfillmentTimestamp  DateTime?
+  oracleContractAddress String
+  dataRequestorAddress  String
+  roundTripLatencyBlocks Int?     // fulfillmentLedger - requestLedger
+  roundTripLatencyMs    Int?      // (fulfillmentTime - requestTime) in ms
+  status                String   @default("pending") // pending | fulfilled | timeout
+  createdAt             DateTime @default(now())
+
+  @@index([oracleContractAddress])
+  @@index([dataRequestorAddress])
+  @@index([status])
+  @@index([requestLedgerSequence])
+}
+
+// RWA clawback & compliance events
+model RwaComplianceEvent {
+  id                String   @id @default(cuid())
+  transactionHash   String   @unique
+  ledgerSequence    Int
+  ledgerCloseTime   DateTime
+  assetContractAddress String
+  issuerAddress     String
+  targetAddress     String   // address from which tokens were clawed back
+  amount            String   // token amount as string (preserves precision)
+  complianceReason  String   // regulatory flag or reason
+  humanStatement    String   // "Issuer recovered 5,000 corporate bond tokens from address GABC..."
+  createdAt         DateTime @default(now())
+
+  @@index([assetContractAddress])
+  @@index([issuerAddress])
+  @@index([targetAddress])
+  @@index([ledgerSequence])
+}
+
+// Contract resource usage tracking for memory leak detection
+model ContractResourceMetric {
+  id                String   @id @default(cuid())
+  contractAddress   String
+  transactionHash   String
+  ledgerSequence    Int
+  ledgerCloseTime   DateTime
+  memoryUsageBytes  Int
+  cpuInstructions   Int
+  storageFootprint  Int
+  createdAt         DateTime @default(now())
+
+  @@unique([contractAddress, transactionHash])
+  @@index([contractAddress, ledgerSequence])
+  @@index([contractAddress, memoryUsageBytes])
+}
+
+// Contract factory parent-child relationship mapping
+model ContractFactory {
+  id                String   @id @default(cuid())
+  parentContractAddress String
+  childContractAddress  String
+  creationTransactionHash String
+  creationLedgerSequence Int
+  creationTimestamp DateTime
+  createdAt         DateTime @default(now())
+
+  @@unique([parentContractAddress, childContractAddress])
+  @@index([parentContractAddress])
+  @@index([childContractAddress])
+  @@index([creationLedgerSequence])
+}
