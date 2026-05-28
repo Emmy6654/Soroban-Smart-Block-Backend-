@@ -104,22 +104,26 @@ async function storeEvent(event: LedgerEvent): Promise<number> {
   });
   if (!txExists) return 0; // transaction not yet indexed; skip
 
-  const { eventType, decoded } = decodeEvent(event.topics, event.data);
+  const { eventType, topicSymbol, decoded } = decodeEvent(event.topics, event.data);
 
   // Stable dedup key: hash + first topic (mirrors existing indexer logic)
   const id = `${event.transactionHash}-${event.topics[0] ?? '0'}`;
 
-  // Batched, mutex-protected upsert — coalesces concurrent writes
-  await barrierUpsertEvent({
-    id,
-    transactionHash: event.transactionHash,
-    contractAddress: event.contractId,
-    eventType,
-    topics: event.topics,
-    data: { raw: event.data },
-    decoded: decoded as object,
-    ledgerSequence: event.ledgerSequence,
-    ledgerCloseTime: event.ledgerCloseTime,
+  await prisma.event.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id,
+      transactionHash: event.transactionHash,
+      contractAddress: event.contractId,
+      eventType,
+      topicSymbol,
+      topics: event.topics,
+      data: { raw: event.data },
+      decoded: decoded as object,
+      ledgerSequence: event.ledgerSequence,
+      ledgerCloseTime: event.ledgerCloseTime,
+    },
   });
 
   broadcastEvent({
