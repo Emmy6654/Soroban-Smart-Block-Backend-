@@ -11,6 +11,7 @@ import { inspectSignature } from './signatureInspector';
 import { detectContention } from './contention';
 import { analyseCallTrace, storeReentrancyAlert } from './reentrancy-detector';
 import { parseCallTrace } from './call-trace';
+import { trackSacTrustline } from './sac-trustline-mapper';
 import { xdr } from '@stellar/stellar-sdk';
 
 /**
@@ -111,6 +112,22 @@ export async function processLedgerRange(start: number, end: number): Promise<vo
           // non-critical — never block indexing
         }
       }
+
+      // CAP-0073: SAC G-Account unlimited trustline mapping (non-blocking)
+      trackSacTrustline(
+        event.transactionHash,
+        (txResult as any)?.sourceAccount ?? 'unknown',
+        decoded.contractAddress,
+        decoded.functionName,
+        decoded.functionArgs as Record<string, unknown> | null,
+        decoded.humanReadable,
+        String((txResult as any)?.feeCharged ?? ''),
+        sorobanResources as Record<string, unknown> | null,
+        event.ledgerSequence,
+        event.ledgerCloseTime,
+      ).catch((err) =>
+        console.warn(`[sac-trustline] tracking failed for ${event.transactionHash}:`, err),
+      );
     }
   }
 
