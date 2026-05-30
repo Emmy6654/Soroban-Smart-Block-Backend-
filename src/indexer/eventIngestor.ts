@@ -8,6 +8,7 @@ import { broadcastSSEEvent } from '../api/sse';
 import { barrierUpsertContract, barrierUpsertEvent } from './writeBarrier';
 import { getWhaleWatcher } from './whaleWatcher';
 import { dispatchWebhooks } from '../webhooks/dispatcher';
+import { maybeActivateFromTransferEvent } from './sac-account-activator';
 
 /**
  * Parse DiagnosticEvents from a raw TransactionMeta XDR (base64).
@@ -156,6 +157,17 @@ async function storeEvent(event: LedgerEvent): Promise<number> {
     ledgerSequence: event.ledgerSequence,
     ledgerCloseTime: event.ledgerCloseTime,
   });
+
+  // #168: Evaluate XLM SAC transfers for destination account activation
+  if (eventType === 'transfer' && decoded && typeof decoded === 'object') {
+    maybeActivateFromTransferEvent(
+      decoded as Record<string, unknown>,
+      event.contractId,
+      event.transactionHash,
+      event.ledgerSequence,
+      event.ledgerCloseTime,
+    ).catch((err) => console.error('[sac-activator] evaluation error:', err));
+  }
 
   const broadcastPayload = {
     id,
