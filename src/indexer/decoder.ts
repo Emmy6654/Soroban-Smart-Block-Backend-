@@ -53,8 +53,34 @@ export interface DecodedTransaction {
 
 /**
  * Decode a raw transaction XDR into human-readable form.
+ *
+ * Handles envelopeTypeTx (v1), envelopeTypeTxV0 (v0), and
+ * envelopeTypeTxFeeBump by extracting the inner transaction and
+ * prefixing the human-readable output with "(fee-bump)".
  */
 export async function decodeTransaction(rawXdr: string): Promise<DecodedTransaction> {
+  // ── fee-bump fast path ────────────────────────────────────────────────────
+  try {
+    const envelope = xdr.TransactionEnvelope.fromXDR(rawXdr, 'base64');
+    if (envelope.switch().name === 'envelopeTypeTxFeeBump') {
+      // The inner transaction is itself a TransactionEnvelope (v1).
+      const innerEnvelope = envelope.feeBump().tx().innerTx();
+      const innerXdr = innerEnvelope.toXDR('base64');
+      const inner = await decodeTransaction(innerXdr);
+      return {
+        contractAddress: inner.contractAddress,
+        functionName: inner.functionName,
+        functionArgs: inner.functionArgs,
+        humanReadable: inner.humanReadable
+          ? `(fee-bump) ${inner.humanReadable}`
+          : '(fee-bump)',
+      };
+    }
+  } catch {
+    // Not a valid fee-bump envelope — fall through to standard decode
+  }
+
+  // ── standard v1 / v0 path ─────────────────────────────────────────────────
   const parsed = parseInvokeHostFunction(rawXdr);
   if (!parsed) {
     return { contractAddress: null, functionName: null, functionArgs: null, humanReadable: null };
