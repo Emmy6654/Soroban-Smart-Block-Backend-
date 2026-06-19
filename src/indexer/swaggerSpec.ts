@@ -387,6 +387,194 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        // Static descriptor for a supported privacy protocol (PRIVACY_PROTOCOLS_INFO).
+        PrivacyProtocolInfo: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'zk-SNARK' },
+            description: {
+              type: 'string',
+              example: 'Zero-knowledge Succinct Non-Interactive Argument of Knowledge. Groth16 and PLONK proving systems for private transactions.',
+            },
+            category: {
+              type: 'string',
+              description: 'transfer | zkp | address | mixer | voting | data | storage | analytics',
+              example: 'zkp',
+            },
+            strength: { type: 'integer', description: 'Relative privacy strength weight', example: 15 },
+          },
+        },
+        // A detected privacy-preserving transaction (full PrivacyTransaction record).
+        // Field types follow the PrivacyTransaction model in prisma/schema.prisma.
+        PrivacyTransaction: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2privtx01' },
+            txHash: { type: 'string', example: '3389e9f0f1a4e32477b1c0d9e8a6f5b4c3d2e1f0a9b8c7d6e5f40312233445566' },
+            protocols: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['SHIELDED_TRANSFER', 'ZK_SNARK', 'ZK_STARK', 'BULLETPROOF', 'STEALTH_ADDRESS', 'MIXER', 'PRIVATE_VOTING', 'OFF_CHAIN_DATA', 'ENCRYPTED_STATE', 'DIFFERENTIAL_PRIVACY'],
+              },
+              example: ['ZK_SNARK', 'SHIELDED_TRANSFER'],
+            },
+            guarantees: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['SENDER_PRIVACY', 'RECIPIENT_PRIVACY', 'AMOUNT_PRIVACY', 'ASSET_TYPE_PRIVACY', 'VOTE_PRIVACY', 'FULL_PRIVACY'],
+              },
+              example: ['SENDER_PRIVACY', 'AMOUNT_PRIVACY'],
+            },
+            cryptographicPrimitives: {
+              type: 'object',
+              nullable: true,
+              description: 'Detected primitives (proving system, curve, hash function)',
+              example: { provingSystem: 'Groth16', curve: 'BLS12-381' },
+            },
+            anonymitySetSize: { type: 'integer', nullable: true, example: 128 },
+            effectiveAnonymitySet: { type: 'integer', nullable: true, example: 96 },
+            privacyScore: { type: 'number', nullable: true, description: 'Privacy score (0-100)', example: 87.5 },
+            riskScore: { type: 'number', nullable: true, description: 'De-anonymization risk score (0-100)', example: 12 },
+            totalValue: { type: 'string', nullable: true, description: 'Raw value in base units', example: '1000000000' },
+            usdValue: { type: 'number', nullable: true, example: 100 },
+            assetType: { type: 'string', nullable: true, example: 'USDC' },
+            contractAddresses: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['CALLD5GHXR4QSTKHSWQEK4UVMHM4QHU4KZ5G4SBKWY7C7TXKZ45RJ4M5'],
+            },
+            participants: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI'],
+            },
+            participantCount: { type: 'integer', example: 1 },
+            ledgerSequence: { type: 'integer', example: 3168075 },
+            timestamp: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+          },
+        },
+        // Per-address privacy compliance report (PrivacyComplianceReport record).
+        PrivacyComplianceReport: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2report01' },
+            address: { type: 'string', example: 'GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI' },
+            totalPrivateTx: { type: 'integer', example: 12 },
+            protocolsUsed: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Protocol ids this address has used',
+              example: ['ZK_SNARK', 'MIXER'],
+            },
+            riskScore: { type: 'number', nullable: true, description: '0-100', example: 35 },
+            flagged: { type: 'boolean', example: false },
+            flagReason: { type: 'string', nullable: true, example: null },
+            complianceLabel: { type: 'string', nullable: true, example: null },
+            linkedAddresses: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN'],
+            },
+            lastActivity: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+            reportGeneratedAt: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:27.000Z' },
+          },
+        },
+        // A de-anonymization finding linking a private transaction to an address.
+        DeAnonymizationFinding: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2finding1' },
+            sourceTx: { type: 'string', example: '3389e9f0f1a4e32477b1c0d9e8a6f5b4c3d2e1f0a9b8c7d6e5f40312233445566' },
+            targetAddress: { type: 'string', example: 'GBZXN7PIRZGNMHGA7MUUUF4GWPY5AYPV6LY4UV2GL6VJGIQRXFDNMADI' },
+            technique: {
+              type: 'string',
+              description: 'Heuristic used: timing | amount_correlation | taint | common_input',
+              example: 'amount_correlation',
+            },
+            confidence: { type: 'number', description: 'Confidence (0-1)', example: 0.82 },
+            evidence: {
+              type: 'object',
+              description: 'Supporting evidence for the finding',
+              example: { privateAmount: '1000000000', publicAmount: '1000000000', timeDelta: 12 },
+            },
+            linkedAddresses: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN'],
+            },
+            probability: { type: 'number', nullable: true, example: 0.74 },
+            detectedAt: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+          },
+        },
+        // A periodic snapshot of privacy adoption metrics (PrivacyAnalytics record).
+        PrivacyAnalytics: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2analyt01' },
+            timestamp: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+            period: { type: 'string', description: 'Aggregation period: hour | day | week', example: 'day' },
+            totalPrivateTx: { type: 'integer', example: 320 },
+            totalTx: { type: 'integer', example: 15430 },
+            totalVolume: { type: 'string', description: 'Raw value in base units', example: '4500000000000' },
+            privacyShare: { type: 'number', description: 'Private tx / total tx (0-1)', example: 0.0207 },
+            volumeShare: { type: 'number', nullable: true, example: 0.034 },
+            byProtocol: {
+              type: 'object',
+              description: 'Per-protocol transaction counts',
+              example: { ZK_SNARK: 120, MIXER: 45, SHIELDED_TRANSFER: 80 },
+            },
+            avgAnonymitySet: { type: 'number', nullable: true, example: 96.4 },
+            maxAnonymitySet: { type: 'integer', nullable: true, example: 256 },
+            medianAnonymitySet: { type: 'number', nullable: true, example: 88 },
+            avgPrivacyScore: { type: 'number', nullable: true, example: 71.2 },
+            avgRiskScore: { type: 'number', nullable: true, example: 18.5 },
+            deAnonymizedCount: { type: 'integer', nullable: true, example: 7 },
+            uniqueUsers: { type: 'integer', nullable: true, example: 210 },
+            uniqueContracts: { type: 'integer', nullable: true, example: 34 },
+          },
+        },
+        // A periodic metrics snapshot for a single privacy protocol.
+        PrivacyProtocolDetail: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2detail01' },
+            protocol: {
+              type: 'string',
+              enum: ['SHIELDED_TRANSFER', 'ZK_SNARK', 'ZK_STARK', 'BULLETPROOF', 'STEALTH_ADDRESS', 'MIXER', 'PRIVATE_VOTING', 'OFF_CHAIN_DATA', 'ENCRYPTED_STATE', 'DIFFERENTIAL_PRIVACY'],
+              example: 'ZK_SNARK',
+            },
+            timestamp: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+            period: { type: 'string', example: 'day' },
+            txCount: { type: 'integer', example: 120 },
+            volume: { type: 'string', nullable: true, example: '1200000000000' },
+            uniqueUsers: { type: 'integer', nullable: true, example: 64 },
+            uniqueContracts: { type: 'integer', nullable: true, example: 8 },
+            avgAnonymitySet: { type: 'number', nullable: true, example: 112.5 },
+            cryptographicPrimitivesUsed: {
+              type: 'object',
+              nullable: true,
+              example: { provingSystem: 'Groth16', curve: 'BLS12-381' },
+            },
+          },
+        },
+        // A point-in-time anonymity set size for a protocol (AnonymitySetSnapshot record).
+        AnonymitySetSnapshot: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'clz9q1x4t0000s6h2snap01' },
+            protocol: {
+              type: 'string',
+              enum: ['SHIELDED_TRANSFER', 'ZK_SNARK', 'ZK_STARK', 'BULLETPROOF', 'STEALTH_ADDRESS', 'MIXER', 'PRIVATE_VOTING', 'OFF_CHAIN_DATA', 'ENCRYPTED_STATE', 'DIFFERENTIAL_PRIVACY'],
+              example: 'MIXER',
+            },
+            contractAddress: { type: 'string', nullable: true, example: 'CALLD5GHXR4QSTKHSWQEK4UVMHM4QHU4KZ5G4SBKWY7C7TXKZ45RJ4M5' },
+            setSize: { type: 'integer', description: 'Theoretical anonymity set size', example: 128 },
+            effectiveSetSize: { type: 'integer', nullable: true, description: 'Effective set size after de-anonymization heuristics', example: 96 },
+            timestamp: { type: 'string', format: 'date-time', example: '2026-06-19T07:24:26.000Z' },
+          },
+        },
       },
     },
     security: [{ ApiKeyAuth: [] }],
