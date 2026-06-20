@@ -104,6 +104,7 @@ router.use('/simulate', simulateRouter);
 router.use('/verify', verifyRouter);
 router.use('/sandbox', sandboxRouter);
 router.use('/dex', dexRouter);
+router.use('/dex-analytics', dexAnalyticsRouter);
 router.use('/protocol', protocolRouter);
 router.use('/nft', nftRouter);
 router.use('/abi', abiRouter);
