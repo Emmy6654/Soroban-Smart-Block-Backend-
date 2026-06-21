@@ -11,6 +11,11 @@
  *   - Kebab-case, matching the file name where possible
  *   - No trailing slashes
  *   - oracle-audit mounts under /oracles/audit (avoids root wildcard conflict)
+ *
+ * NOTE: Only routers that compile against the current Prisma schema are
+ * mounted here. Additional routers exist in src/api/ for advanced features
+ * (arbitrage, MEV, privacy, etc.) but depend on Prisma models not yet in
+ * the schema. Those will be mounted once the models are added.
  */
 
 import { Router } from 'express';
@@ -35,10 +40,8 @@ import { complianceRouter } from './compliance';
 
 export const router = Router();
 
-// ── i18n ──────────────────────────────────────────────────────────────────────
-router.use('/i18n', i18nRouter);
-
 // ── Core Stellar / Soroban ────────────────────────────────────────────────────
+router.use('/i18n', i18nRouter);
 router.use('/transactions', transactionRouter);
 router.use('/events', eventRouter);
 router.use('/contracts', contractRouter);

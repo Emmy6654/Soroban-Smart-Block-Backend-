@@ -189,33 +189,27 @@ export function detectNegativeCycles(graph: PriceGraph, maxHops = 5): ArbitrageC
       const [from, to, poolId] = edgeKey.split(':');
       const df = dist.get(from) ?? Infinity;
       const dt = dist.get(to) ?? Infinity;
-      if (df + weight < dt && df !== Infinity) {
-        // Negative cycle reachable from startToken.
-        // Step 1: follow prev from `to` N times to land inside the cycle
-        let cur = to;
-        for (let i = 0; i < tokens.length; i++) {
-          const p = prev.get(cur);
-          if (!p) break;
-          cur = p.token;
-        }
-        const cycleNode = cur;
-        // Step 2: collect the cycle by tracing prev until we return
-        const revPath: string[] = [];
+      if (df + weight < dt && to === startToken && df !== Infinity) {
+        // Reconstruct cycle path in forward order
+        const reverseNodes: string[] = [];
         const poolIds: string[] = [];
         const dexNames: string[] = [];
-        do {
-          revPath.push(cur);
+
+        let cur = from;
+        let safetyNet = 0;
+        while (cur !== startToken && safetyNet < maxHops) {
+          reverseNodes.push(cur);
           const p = prev.get(cur);
           if (!p) break;
           poolIds.push(p.poolId);
           dexNames.push(p.dex);
           cur = p.token;
-        } while (cur !== cycleNode);
-        if (revPath.length < 2) continue;
-
-        // Reverse path for forward ordering; poolIds stay in original order
-        const cyclePath = revPath.reverse();
-        const fullPath = [...cyclePath, cyclePath[0]];
+          safetyNet++;
+        }
+        const path = [startToken, ...reverseNodes.reverse()];
+        poolIds.push(poolId);
+        const node = Array.from(graph.nodes.get(from) ?? []).find((n) => n.poolId === poolId);
+        dexNames.push(node?.dexName ?? '');
 
         const cycleKey = [...cyclePath].sort().join('-');
         if (!seen.has(cycleKey)) {

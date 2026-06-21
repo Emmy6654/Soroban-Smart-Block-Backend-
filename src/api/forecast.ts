@@ -1,8 +1,6 @@
 // src/api/forecast.ts
 import express from 'express';
-import { prisma } from '../db';
-// @ts-ignore - forecast module may not exist at build time
-import { getForecast, getAnomalyForecast, trainModel, retrainModel, deleteModel, compareModels } from '../indexer/forecast';
+import { getForecast, trainModel, retrainModel, deleteModel } from '../indexer/forecast';
 
 declare function getPredictions(modelId: string): Promise<any>;
 declare function getFeatureImportance(modelId: string): Promise<any>;
@@ -13,9 +11,25 @@ const router = express.Router();
 
 // GET /api/v1/predict/forecast
 router.post('/predict/forecast', async (req, res) => {
-  const { metric, granularity, horizon, model_type, confidence_level, include_features, include_history } = req.body;
+  const {
+    metric,
+    granularity,
+    horizon,
+    model_type,
+    confidence_level,
+    include_features,
+    include_history,
+  } = req.body;
   try {
-    const forecast = await getForecast(metric, granularity, horizon, model_type, confidence_level, include_features, include_history);
+    const forecast = await getForecast(
+      metric,
+      granularity,
+      horizon,
+      model_type,
+      confidence_level,
+      include_features,
+      include_history,
+    );
     res.json(forecast);
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate forecast' });
@@ -111,9 +125,11 @@ router.post('/predict/models/:model_id/retrain', async (req, res) => {
 router.delete('/predict/models/:model_id', async (req, res) => {
   const { model_id } = req.params;
   try {
-    await deleteModel(model_id);
-    res.status(204).send();
+    const result = await deleteModel(model_id);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete model' });
   }
 });
+
+export default router;

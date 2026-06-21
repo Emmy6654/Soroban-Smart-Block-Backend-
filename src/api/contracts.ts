@@ -169,23 +169,19 @@ contractRouter.get(
 contractRouter.get(
   '/:address/stats',
   validateAddressParam('address'),
-  async (req: Request, res: Response) => {
-    try {
-      const { since } = contractStatsQuerySchema.parse(req.query);
-      const stats = await getContractFunctionStats(
-        req.params.address,
-        since ? new Date(since) : undefined,
-      );
+  asyncHandler(async (req: Request, res: Response) => {
+    const { since } = contractStatsQuerySchema.parse(req.query);
+    const stats = await getContractFunctionStats(
+      req.params.address,
+      since ? new Date(since) : undefined,
+    );
 
-      if (stats === null) {
-        return res.status(404).json({ error: 'Contract not found' });
-      }
-
-      return res.json(stats);
-    } catch (e) {
-      return res.status(400).json({ error: String(e) });
+    if (stats === null) {
+      return res.status(404).json({ error: 'Contract not found' });
     }
-  },
+
+    return res.json(stats);
+  }),
 );
 
 /**
@@ -243,7 +239,7 @@ contractRouter.get(
 contractRouter.get(
   '/:address',
   validateAddressParam('address'),
-  asyncHandler(async (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const contract = await prismaRead.contract.findUnique({
       where: { address: req.params.address },
       include: {
@@ -261,7 +257,7 @@ contractRouter.get(
     });
     if (!contract) return res.status(404).json({ error: 'Contract not found' });
     res.json(contract);
-  }),
+  },
 );
 
 /**
@@ -303,8 +299,9 @@ contractRouter.get(
  *               example: { error: 'address is required' }
  */
 // POST /contracts — register ABI metadata
-contractRouter.post('/', async (req: Request, res: Response) => {
-  try {
+contractRouter.post(
+  '/',
+  asyncHandler(async (req: Request, res: Response) => {
     const data = abiSchema.parse(req.body);
     const contract = await prismaWrite.contract.upsert({
       where: { address: data.address },
@@ -317,7 +314,5 @@ contractRouter.post('/', async (req: Request, res: Response) => {
       },
     });
     res.status(201).json(contract);
-  } catch (e) {
-    res.status(400).json({ error: String(e) });
-  }
-});
+  }),
+);
