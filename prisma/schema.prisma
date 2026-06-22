@@ -2822,3 +2822,126 @@ model ZkpVerificationEvent {
   ledgerCloseTime     DateTime
   createdAt           DateTime @default(now())
 }
+
+// ─── Soroban Reentrancy Fortress (Issue #307) ────────────────────────────────
+
+enum ReentrancyType {
+  SIMPLE
+  CROSS_CONTRACT
+  MULTI_STEP
+  READ_ONLY
+  CROSS_FUNCTION
+  DESTRUCTIVE
+}
+
+enum ReentrancySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model CallGraphVertex {
+  id              String   @id @default(cuid())
+  txHash          String   @map("tx_hash")
+  contractAddress String   @map("contract_address")
+  functionName    String   @map("function_name")
+  depth           Int
+  callIndex       Int      @map("call_index")
+  value           String?
+  preStateReads   Json?    @map("pre_state_reads")
+  postStateWrites Json?    @map("post_state_writes")
+  timestamp       DateTime
+
+  @@index([txHash])
+  @@index([contractAddress])
+  @@map("call_graph_vertices")
+}
+
+model CallGraphEdge {
+  id            String   @id @default(cuid())
+  txHash        String   @map("tx_hash")
+  fromVertexId  String   @map("from_vertex_id")
+  toVertexId    String   @map("to_vertex_id")
+  functionName  String   @map("function_name")
+  value         String?
+  gasForwarded  Int?     @map("gas_forwarded")
+  argsHash      String?  @map("args_hash")
+  callIndex     Int      @map("call_index")
+  timestamp     DateTime
+
+  @@index([txHash])
+  @@index([fromVertexId])
+  @@index([toVertexId])
+  @@map("call_graph_edges")
+}
+
+model ReentrancyFinding {
+  id              String            @id @default(cuid())
+  txHash          String            @map("tx_hash")
+  contractAddress String            @map("contract_address")
+  reentrancyType  ReentrancyType    @map("reentrancy_type")
+  severity        ReentrancySeverity
+  likelihood      String
+  loopPath        Json
+  entryPoint      String            @map("entry_point")
+  valueAtRisk     String?           @map("value_at_risk")
+  usdValueAtRisk  Float?            @map("usd_value_at_risk")
+  profitPotential Float?            @map("profit_potential")
+  description     String
+  detectedAt      DateTime          @map("detected_at")
+
+  @@index([txHash])
+  @@index([contractAddress])
+  @@index([severity])
+  @@map("reentrancy_findings")
+}
+
+model ContractRiskScore {
+  id                String   @id @default(cuid())
+  contractAddress   String   @unique @map("contract_address")
+  riskScore         Int      @map("risk_score")
+  previousScore     Int?     @map("previous_score")
+  totalFindings     Int      @map("total_findings")
+  criticalFindings  Int      @map("critical_findings")
+  highFindings      Int      @map("high_findings")
+  mediumFindings    Int      @map("medium_findings")
+  riskFactors       Json     @map("risk_factors")
+  lastAnalyzed      DateTime @map("last_analyzed")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("contract_risk_scores")
+}
+
+model ReentrancyAlertExtended {
+  id              String   @id @default(cuid())
+  contractAddress String   @map("contract_address")
+  findingId       String?  @map("finding_id")
+  alertType       String   @map("alert_type")
+  severity        String
+  message         String
+  metadata        Json?
+  createdAt       DateTime @map("created_at")
+  acknowledged    Boolean  @default(false)
+  acknowledgedAt  DateTime? @map("acknowledged_at")
+
+  @@index([contractAddress, createdAt(sort: Desc)])
+  @@map("reentrancy_alerts")
+}
+
+model ReentrancyStats {
+  id                  String   @id @default(cuid())
+  timestamp           DateTime
+  totalCallGraphs     Int      @map("total_call_graphs")
+  contractsAnalyzed   Int      @map("contracts_analyzed")
+  contractsWithLoops  Int      @map("contracts_with_loops")
+  highRiskContracts   Int      @map("high_risk_contracts")
+  criticalFindings    Int      @map("critical_findings")
+  totalFindings       Int      @map("total_findings")
+  mostCommonPatterns  Json     @map("most_common_patterns")
+  avgDepth            Float?   @map("avg_depth")
+  maxDepth            Int?     @map("max_depth")
+  valueAtRiskTotal    String?  @map("value_at_risk_total")
+
+  @@map("reentrancy_stats")
+}
