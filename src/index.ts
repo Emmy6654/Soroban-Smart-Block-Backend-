@@ -104,6 +104,11 @@ async function main() {
     } catch (err) {
       logger.warn('Arbitrage scanner failed to start', { error: String(err) });
     }
+    try {
+      startFeeAggregator();
+    } catch (err) {
+      logger.warn('Fee aggregator failed to start', { error: String(err) });
+    }
   }
 
   // Start Price Updater background service
